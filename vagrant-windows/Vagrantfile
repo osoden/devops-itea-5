@@ -1,0 +1,69 @@
+cpu = "1"
+ram = "2048"
+
+Vagrant.configure("2") do |config|
+
+    # Box to create VM from
+    config.vm.box = "kagarlickij/Windows-2016"
+
+    # Box version to use (latest)
+    config.vm.box_version = ">= 0"
+
+    # Check box update during vagrant up
+    config.vm.box_check_update = true
+
+    # Check checksum after box download
+    config.vm.box_download_checksum = true
+
+    # Set checksum type
+    config.vm.box_download_checksum_type = "sha1"
+
+    # Check SSL certificate before box download
+    config.vm.box_download_insecure = false
+
+    # Set VM guest OS type
+    config.vm.guest = :windows
+    
+    # Communicator type to use with guest VM
+    config.vm.communicator = "winrm"
+    
+    # Username to use WinRM
+    config.winrm.username = "vagrant"
+    
+    # Password to use WinRM
+    config.winrm.password = "vagrant"
+
+    # Set VM hostname
+    config.vm.hostname = "windows-2016"
+
+    # Set VM CPU & RAM limits
+    config.vm.provider "virtualbox" do |v|
+        v.customize ["modifyvm", :id, "--cpuexecutioncap", "95"]
+        v.memory = ram
+        v.cpus = cpu
+    end
+
+    # Set port forwarding 
+    config.vm.network "forwarded_port", guest: "3389", host: "3389", host_ip: "127.0.0.1", protocol: "tcp", auto_correct: true
+    config.vm.network "forwarded_port", guest: "80", host: "8080", host_ip: "127.0.0.1", protocol: "tcp", auto_correct: true
+
+    # Execute external script
+    config.vm.provision "shell", path: "update.ps1"
+
+    # Copy file from host to VM  
+    config.vm.provision "file", source: "index.html", destination: "C:\\"
+
+    # Execute inline scripts
+    config.vm.provision "Install IIS",
+        type: "shell",
+        preserve_order: true,
+        inline: "Install-WindowsFeature -Name web-server"
+    config.vm.provision "Copy content",
+        type: "shell",
+        preserve_order: true,
+        inline: "Copy-Item -Path 'C:\\index.html' -Destination 'C:\\inetpub\\wwwroot'"
+
+    # Seconds to wait during gracefull halt
+    config.windows.halt_timeout = "120"
+
+end

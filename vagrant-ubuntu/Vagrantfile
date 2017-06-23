@@ -1,0 +1,70 @@
+cpu = "1"
+ram = "1024"
+
+Vagrant.configure("2") do |config|
+
+  # Box to create VM from
+  config.vm.box = "Ubuntu-1604-virtualbox"
+  
+  # Box version to use (latest)
+  config.vm.box_version = ">= 0"
+
+  # Check box update during vagrant up
+  config.vm.box_check_update = true
+
+  # Check checksum after box download
+  config.vm.box_download_checksum = true
+
+  # Set checksum type
+  config.vm.box_download_checksum_type = "sha1"
+
+  # Check SSL certificate before box download
+  config.vm.box_download_insecure = false
+
+  # SSH for linux and winrm for Windows
+  config.vm.communicator = "ssh"
+  
+  # Replace default insecure SSH key
+  config.ssh.insert_key = false
+
+  # SSH username
+  config.ssh.username = "vagrant"
+
+  # Shell to use via SSH
+  config.ssh.shell = "bash -c 'BASH_ENV=/etc/profile exec bash'"
+
+  # Set VM hostname
+  config.vm.hostname = "ubuntu-1604"
+
+  # Set VM CPU & RAM limits
+  config.vm.provider "virtualbox" do |v|
+    v.customize ["modifyvm", :id, "--cpuexecutioncap", "95"]
+    v.memory = ram
+    v.cpus = cpu
+  end
+
+  # Set port forwarding
+  config.vm.network "forwarded_port", guest: "80", host: "8080", host_ip: "127.0.0.1", protocol: "tcp", auto_correct: true
+
+  # Set shared folders: host > VM
+  config.vm.synced_folder "~/Desktop", "/host_desktop"
+
+  # Execute external script
+  config.vm.provision "shell", path: "update.sh"
+
+  # Execute Ansible playbook
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "nginx.yml"
+    ansible.sudo = true
+  end
+
+  # Execute inline script
+  config.vm.provision "Copy content",
+    type: "shell",
+    preserve_order: true,
+    inline: "cp /vagrant/index.html /var/www/html"
+
+  # Seconds to wait during gracefull halt
+  config.vm.graceful_halt_timeout = "120"
+
+end

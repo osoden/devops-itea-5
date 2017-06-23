@@ -1,0 +1,93 @@
+{
+  "variables": {
+    "artifact_name": "Windows-2016",
+
+    "cpu_cores": "1",
+    "memory_size": "2048",
+    "disk_size": "51200"
+  },
+
+  "description": "{{user `artifact_name`}} demo example",
+
+  "builders": [
+    {
+      "type": "virtualbox-iso",
+
+      "headless": true,
+      "guest_additions_mode": "attach",
+      "guest_os_type": "Windows2012_64",
+      "vm_name": "tmp-{{user `artifact_name`}}",
+      "output_directory": "packer_tmp-{{user `artifact_name`}}-virtualbox",
+
+      "vboxmanage": [
+        ["modifyvm", "{{.Name}}", "--cpus", "{{user `cpu_cores`}}"],
+        ["modifyvm", "{{.Name}}", "--memory", "{{user `memory_size`}}"],
+        ["modifyvm", "{{.Name}}", "--vram", "48" ],
+        ["modifyvm", "{{.Name}}", "--cpuexecutioncap", "95"],
+        ["modifyvm", "{{.Name}}", "--usb", "off"],
+        ["modifyvm", "{{.Name}}", "--audio", "none"],
+        ["modifyvm", "{{.Name}}", "--clipboard", "bidirectional"],
+        ["modifyvm", "{{.Name}}", "--vrde", "off"]
+      ],
+
+      "hard_drive_interface": "sata",
+      "disk_size": "{{user `disk_size`}}",
+
+      "floppy_files": [
+        "Autounattend.xml",
+        "enable-WinRM.ps1",
+        "unattend.xml",
+        "shutdown-packer.bat",
+        "oracle.cer"
+      ],
+
+      "iso_url": "http://care.dlservice.microsoft.com/dl/download/1/6/F/16FA20E6-4662-482A-920B-1A45CF5AAE3C/14393.0.160715-1616.RS1_RELEASE_SERVER_EVAL_X64FRE_EN-US.ISO",
+      "iso_checksum": "3bb1c60417e9aeb3f4ce0eb02189c0c84a1c6691",
+      "iso_checksum_type": "sha1",
+
+      "boot_wait": "1m",
+
+      "communicator": "winrm",
+      "winrm_use_ssl": "false",
+      "winrm_insecure": "true",
+      "winrm_username": "vagrant",
+      "winrm_password": "vagrant",
+      "winrm_timeout": "5h",
+
+      "shutdown_timeout": "1h",
+      "shutdown_command": "shutdown /s /t 10 /f /d p:4:1"
+    }
+  ],
+
+  "provisioners": [
+    {
+      "type": "powershell",
+      "scripts": [
+        "install-GuestTools.ps1",
+        "../postInstall.ps1",
+        "../set-WindowsFeatures.ps1",
+        "../install-Software.ps1",
+        "disable-Swap.ps1"
+      ]
+    },
+    {
+      "type": "windows-restart"
+    },
+    {
+      "type": "powershell",
+      "scripts": [
+        "cleanup.ps1",
+        "enable-Swap.ps1",
+        "postSetup.ps1"
+      ]
+    }
+  ],
+
+  "post-processors": [
+    {
+      "output": "{{user `artifact_name`}}-{{.Provider}}.box",
+      "type": "vagrant"
+    }
+  ]
+
+}

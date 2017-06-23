@@ -1,0 +1,92 @@
+{
+    "variables": {
+        "artifact_name": "Ubuntu-1604"
+    },
+
+    "description": "{{user `artifact_name`}} demo example",
+
+    "builders": [
+        {
+            "type": "virtualbox-iso",
+            "guest_additions_mode": "upload",
+            "virtualbox_version_file": "/home/vagrant/.vbox_version",
+            "guest_additions_path": "VBoxGuestAdditions_{{.Version}}.iso",
+            "headless": true,
+            "guest_os_type": "Ubuntu_64",
+
+            "vm_name": "tmp-{{user `artifact_name`}}",
+            "hard_drive_interface": "sata",
+            "disk_size": 10240,
+
+            "vboxmanage": [
+                ["modifyvm", "{{.Name}}", "--memory", "1024"],
+                ["modifyvm", "{{.Name}}", "--cpus", "1"],
+                ["modifyvm", "{{.Name}}", "--cpuexecutioncap", "95"],
+                ["modifyvm", "{{.Name}}", "--usb", "off"],
+                ["modifyvm", "{{.Name}}", "--audio", "none"],
+                ["modifyvm", "{{.Name}}", "--clipboard", "bidirectional"],
+                ["modifyvm", "{{.Name}}", "--vrde", "off"]
+            ],
+
+            "iso_url": "http://releases.ubuntu.com/16.04/ubuntu-16.04.2-server-amd64.iso",
+            "iso_checksum": "f529548fa7468f2d8413b8427d8e383b830df5f6",
+            "iso_checksum_type": "sha1",
+
+            "http_directory": ".",
+            "http_port_min" : 8900,
+            "http_port_max" : 9000,
+            "boot_wait": "10s",
+            "boot_command": [
+                "<enter><wait>",
+                "<f6><esc>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs><bs><bs><bs><bs><bs><bs><bs>",
+                "<bs><bs><bs>",
+                "/install/vmlinuz ",
+                "initrd=/install/initrd.gz ",
+                "net.ifnames=0 ",
+                "auto-install/enable=true ",
+                "debconf/priority=critical ",
+                "preseed/url=http://{{.HTTPIP}}:{{.HTTPPort}}/preseed.cfg ",
+                "<enter>"
+            ],
+
+            "output_directory": "packer_tmp-{{user `artifact_name`}}-virtualbox",
+
+            "ssh_username": "vagrant",
+            "ssh_password": "vagrant",
+            "ssh_wait_timeout": "30m",
+
+            "shutdown_command": "echo 'vagrant' | sudo -S shutdown -P now",
+            "shutdown_timeout": "3m"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "execute_command": "echo 'vagrant' | {{.Vars}} sudo -S -E bash '{{.Path}}'",
+            "scripts": [
+                "vmtools.sh",
+                "vagrant.sh",
+                "../update.sh",
+                "../install.sh"
+            ]
+        },
+        {
+            "type": "ansible",
+            "playbook_file": "../git.yml"
+        }
+    ],
+    "post-processors": [
+        {
+            "output": "{{user `artifact_name`}}-{{.Provider}}.box",
+            "type": "vagrant"
+        }
+    ]
+}

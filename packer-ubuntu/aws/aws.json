@@ -1,0 +1,54 @@
+{
+    "variables": {
+        "artifact_name": "Ubuntu-1404"
+    },
+
+    "description": "{{user `artifact_name`}} demo example",
+
+    "builders": [
+        {
+            "access_key": "{{user `access_key`}}",
+            "secret_key": "{{user `secret_key`}}",
+
+            "type": "amazon-ebs",
+            "instance_type": "t2.medium",
+            "ebs_optimized": false,
+            "launch_block_device_mappings": [{
+                "device_name": "/dev/sda1",
+                "volume_type": "gp2",
+                "volume_size": "30",
+                "iops": "90"
+            }],
+                "ami_block_device_mappings":  [{
+                "device_name": "/dev/sda1",
+                "volume_type": "gp2",
+                "volume_size": "30",
+                "iops": "90"
+            }],
+            "region": "eu-west-1",
+            "source_ami": "ami-a8d2d7ce",
+                            
+            "ami_name": "Ubuntu-AMI-Jun13",
+            "ami_description": "AMI of Ubuntu 16.04 built with Packer",
+
+            "subnet_id": "subnet-eed2a198",
+            "security_group_id": "sg-7ba6d11c",
+            "associate_public_ip_address": true,
+
+            "ssh_username": "ubuntu"
+        }
+    ],
+    "provisioners": [
+        {
+            "type": "shell",
+            "scripts": [
+                "../update.sh",
+                "../install.sh"
+            ]
+        },
+        {
+            "type": "ansible",
+            "playbook_file": "../git.yml"
+        }
+    ]
+}

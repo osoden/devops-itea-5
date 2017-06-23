@@ -1,0 +1,58 @@
+{
+	"builders": [{
+		"access_key": "{{user `access_key`}}",
+		"secret_key": "{{user `secret_key`}}",
+
+		"type": "amazon-ebs",
+	    "instance_type": "t2.medium",
+		"ebs_optimized": false,
+	    "launch_block_device_mappings": [{
+			"device_name": "/dev/sda1",
+			"volume_type": "gp2",
+			"volume_size": "50",
+			"iops": "150"
+		}],
+	    	"ami_block_device_mappings":  [{
+			"device_name": "/dev/sda1",
+			"volume_type": "gp2",
+			"volume_size": "50",
+			"iops": "150"
+		}],
+
+	    "region": "eu-west-1",
+		"source_ami": "ami-6e283d08",
+		    
+		"ami_name": "Windows-AMI-Jun13",
+		"ami_description": "AMI of Windows 2016 built with Packer",
+
+		"subnet_id": "subnet-eed2a198",
+		"security_group_id": "sg-7ba6d11c",
+		"associate_public_ip_address": true,
+
+		"communicator": "winrm",
+		"winrm_username": "Administrator",
+		"winrm_password": "{{user `winrm_password`}}",
+		
+		"winrm_timeout": "4h",
+		"user_data_file": "bootstrap.txt"
+  	}],
+
+  	"provisioners": [
+		{
+	   		"type": "powershell",
+	   		"scripts": [
+	   			"../postInstall.ps1",
+	   			"../set-WindowsFeatures.ps1"
+	   		]
+	    },
+		{
+			"type": "windows-restart"
+		},
+		{
+	    	"type": "powershell",
+	   		"scripts": [
+	   			"../install-Software.ps1"
+	   		]
+	    }
+  	]
+}
